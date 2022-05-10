@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="description" content="Ün Okulları">
+    <meta name="description" content="Hakan Kuru Örnek Proje 2022">
     <link rel="shortcut icon" type="image/x-icon" href="favicon.ico">
-    <title>Okul</title>
+    <title>Code Editor Online</title>
     <meta http-equiv="Cache-control" content="public">
-    <meta name="author" content="hakannet55">
+    <meta name="author" content="HakanKuru">
     <meta name="MobileOptimized" content="320">
     <meta name="HandheldFriendly" content="True">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -26,13 +26,21 @@
     <link rel="stylesheet" href="assets/font-awesome.min.css">
     <link rel="stylesheet" href="assets/bootstrap4.css">
     <link rel="stylesheet" href="assets/bootstrap3.css">
-    <link rel="stylesheet" href="assets/style.css">
+    <link rel="stylesheet" href="style.css">
     <script src="assets/polyfill.js"></script>
     <script src="assets/polyfill_iphone.js"></script>
     <script src="assets/jqr.js"></script>
     <script src="utils.js"></script>
 </head>
 <body>
+<div class="loader w3-animate-right">
+    <img src="assets/img/loader.gif">
+</div>
+<div class="d-inline btn btn-default btn-xs p-2 no-gutters float-right">
+    <label style="cursor: pointer;">
+        <input type="checkbox" name="autofocusEditor" checked="checked"/> Auto-bigTextEditor
+    </label>
+</div>
 <div class="d-block panel">
     <div onclick="saveHistory()" class="btn btn-default w3-hover-blue-gray float-right">
         <span>Kaydet</span>&nbsp;<span class="fa fa-fw fa-save"></span>
@@ -41,13 +49,20 @@
     </select>
     <h4 class="p-2">CODE EDITOR SANDBOX</h4>
 </div>
-<span><b>Önizleme:</b> 2 saniyede bir güncellenecektir.</span>
-<div class="d-inline btn btn-default btn-xs p-2 no-gutters">
-    <label style="cursor: pointer;">
-        <input type="checkbox" name="autofocusEditor" checked="checked"/> Auto-bigTextEditor
-    </label>
+<span><b>Önizleme:</b> 5 saniyede bir otomatik güncellenecektir.</span>
+<br>
+History bölümnden örnek şaplon seçerek başlayabilirsiniz.
+<br>
+İsim vererek kaydetip listeden tekrar seçebilirsiniz.
+<div onclick="resetMemory()" class="btn btn-xs btn-primary">Reset History Memory ?</div>
+<div class="temalar float-right">
+    Tema:
+    <div class="btn btn-sm w3-black">-</div>
+    <div class="btn btn-sm w3-grey">-</div>
+    <div class="btn btn-sm w3-white">-</div>
 </div>
 <div id="iframeWrapper" class="w-100">
+    <div onclick="updatePreviewPage()" class="btn btn-xs btn-primary" style="height: 50px">>><br>Run</div>
     <div id="contentViewRender" class="w-100">
         <style name="src_css"></style>
         <div name="src_html"></div>
@@ -57,14 +72,14 @@
 <div class="tabs d-flex justify-content-around">
     <div class="sub-window">
         <div class="header">
-            <div onclick="minimizeWindow(0)" class="btn btn-primary btn-xs"><</div>
+            <div onclick="minimizeWindow(this)" class="btn btn-primary btn-xs"><</div>
             <span>Javascript</span>
         </div>
         <div class="content" name="js" contenteditable="true"></div>
     </div>
     <div class="sub-window">
         <div class="header">
-            <div onclick="minimizeWindow(0)" class="btn btn-primary btn-xs"><</div>
+            <div onclick="minimizeWindow(this)" class="btn btn-primary btn-xs"><</div>
             <span>HTML</span>
         </div>
         <div class="content" name="html" contenteditable="true"></div>
@@ -72,7 +87,7 @@
     </div>
     <div class="sub-window">
         <div class="header">
-            <div onclick="minimizeWindow(0)" class="btn btn-primary btn-xs"><</div>
+            <div onclick="minimizeWindow(this)" class="btn btn-primary btn-xs"><</div>
             <span>CSS</span>
         </div>
         <div class="content" name="css" contenteditable="true"></div>
@@ -80,27 +95,31 @@
 </div>
 <script type="text/javascript" language="javascript">
 
-    initEditorPage({mockHistory: true});
+    // local storgate empty => mock=true
+    initEditorPage({mockHistory: !(getHistoryList() || []).length});
+    initListeners();
+    initTemalar();
+    window.globalJS_Run = false;
 
     // Live update code
     setInterval(function () {
-        updatePreviewPage();
-    }, 2000);
-
-    $("input[name=autofocusEditor][type=checkbox]").change(function () {
-        if (!getFuncautofocusEditorStatus()) {
-            clearBigTextEditorfunc();
+        if (!isDialogOpened()) {
+            updatePreviewPage();
         }
-    });
+    }, 5000);
 
     function getFuncautofocusEditorStatus() {
         var el = $("input[name=autofocusEditor][type=checkbox]");
-        console.log(el.is(':checked'));
         return el && el.is(':checked');
     }
 
+    function isDisabled(t) {
+        return $(t).closest('.sub-window').hasClass('displayNone');
+    }
+
     $(".tabs .sub-window").on('click', function () {
-        if (getFuncautofocusEditorStatus()) {
+        clearJScodeWarningBorder();
+        if (getFuncautofocusEditorStatus() && !isDisabled(this)) {
             $(this).parent().find(".sub-window").removeClass('focus');
             $(this).parent().find(".sub-window").attr("style", 'width:7vw');
             $(this).addClass("focus");
@@ -109,7 +128,7 @@
     });
 
     $(".tabs .sub-window").focusout(function () {
-        if (getFuncautofocusEditorStatus()) {
+        if (getFuncautofocusEditorStatus() && !isDisabled(this)) {
             $(this).removeClass("focus");
             $(this).attr("style", '');
             if (!$(".sub-window.focus").length) {
@@ -124,12 +143,10 @@
     }
 
     function updateHistoryOptions(mock) {
-        var element = selector();
-        var options = "<option value='-1'>History</option>";
+        var options = "<option value='-1'>Select:</option>";
         getHistoryList().forEach(function (line1, index) {
             options += "<option value='" + index + "'>" + line1.name + "</option>";
         });
-        console.log(options);
         fillTarget("#historySelector", options);
     }
 
@@ -139,6 +156,36 @@
             setHistoryList(true);
         }
         updateHistoryOptions(options.mockHistory);
+        setTimeout(function () {
+            selector(".loader")[0].remove();
+        }, 750);
+
+        // Run Update and JS Code CTR+S
+        document.onkeydown = (e) => {
+            if (e.ctrlKey && e.key === 's') {
+                e.preventDefault();
+                updatePreviewPage();
+            }
+        }
+    }
+
+    function minimizeWindow(t, reset = false) {
+        var v1, v2, v3;
+        v1 = $(t).parent().parent();
+        if (!reset) {
+            v1.addClass('displayNone');
+            $(t).text('>');
+            $(t).attr("style", "background:red");
+            $(t).attr("onclick", "minimizeWindow(this,true)");
+            //v1.css({'display': 'none'});
+            //v1.find('.content').css({'display': 'none'});
+        } else {
+            $(t).text('<');
+            v1.removeClass('displayNone');
+            $(t).attr("style", "");
+            $(t).attr("onclick", "minimizeWindow(this)");
+            clearBigTextEditorfunc();
+        }
     }
 
     function updatePreviewPage() {
@@ -146,7 +193,12 @@
         var target = "#contentViewRender", key, temp1, temp2;
         var codeTextList = getDataWindows();
         codeTextList.forEach(function (line1Element) {
-            temp1 = $(target + ' [name=src_' + line1Element.getAttribute('name') + ']');
+            key = line1Element.getAttribute('name');
+            if (key == "js") {
+                applyJSCode(line1Element.innerText);
+                return;
+            }
+            temp1 = $(target + ' [name=src_' + key + ']');
             //temp1 = selector(target + ' [name=src_' + line1Element.getAttribute('name') + ']');
             //console.log(target + '[name=src_' + line1.getAttribute('name'));
             if (temp1 && temp1.length) {
@@ -155,6 +207,99 @@
         });
     }
 
+    function clearJScodeWarningBorder() {
+        getDataWindows("js").setAttribute("style", "");
+    }
+
+    function applyJSCode(codeText) {
+        clearJScodeWarningBorder();
+        var s = document.createElement("script");
+        s.type = "text/javascript";
+        s.innerHTML = "try{" + codeText + "}catch(e){modalOpen('Hata Oluştu',e);}";
+
+        // prevent it from running unnecessarily
+        if ($("#contentViewRender script").text().length === $(s).text().length) {
+            return;
+        }
+        try {
+            // TODO ???
+            eval(codeText);
+        } catch (e) {
+            modalOpen('Hata Oluştu', e);
+            getDataWindows("js").setAttribute("style", "border:2px solid red");
+            return;
+        }
+        // TODO: ===???? update JS run methot append or eval()
+        //$("#contentViewRender script").remove();
+        //$("#contentViewRender").append(s);
+        window.globalJS_Run = true;
+    }
+
+    function initListeners() {
+        $("input[name=autofocusEditor][type=checkbox]").change(function () {
+            if (!getFuncautofocusEditorStatus()) {
+                clearBigTextEditorfunc();
+            }
+        });
+
+        $("select#historySelector").change(function () {
+            var v1, v2, v3;
+            v1 = $(this).val();
+            if (+v1 >= 0) {
+                v2 = getHistoryList();
+                if (v2.length) {
+                    $(".sub-window .content").html("");
+                    v3 = v2[v1];
+                    const apply = function (codeText, key) {
+                        var target = $(".sub-window .content[name=" + key + "]");
+                        if (target) {
+                            var el = document.createElement("div");
+                            el.innerText = codeText;
+                            target.text($(el).text());
+                        }
+                    };
+                    Object.keys(v3).forEach(function (key) {
+                        apply(v3[key] || "", key)
+                    });
+                }
+            }
+        });
+    }
+
+    function initTemalar() {
+        $(".temalar .btn").click(function () {
+            var v1, v2, v3, v4, v5;
+            v1 = $("body");
+            v2 = $("div#contentViewRender");
+            v3 = $("div[contenteditable='true']");
+            v4 = $("div.sub-window");
+            v5 = $("div#iframeWrapper");
+            switch ($(".temalar .btn").index(this)) {
+                case 0:
+                    v2.css({"background": "#a9a9a9"})
+                    v1.css({"background": "#282828", "color": "white"});
+                    v3.css({"background": "#4e4e4e", "color": "white"});
+                    v4.css({"background": "grey"});
+                    v5.css({"background": 'unset'});
+                    $(".panel").css({"background": "grey", "color": "black"});
+                    break;
+                case 1:
+                    v1.css({"background": "#adadad"});
+                    v3.css({"background": "#bababa"});
+                    v3.css({"color": "white"});
+                    v4.css({"background": "grey"});
+                    break;
+                case 2:
+                    v1.css({"background": ""});
+                    v3.css({"background": "#d5d1cb"});
+                    v3.css({"color": "#92c8d2"});
+                    v4.css({"background": "#e7c89e"});
+                    $(".panel").attr("style", "");
+                    break;
+
+            }
+        });
+    }
 </script>
 </body>
 </html>
