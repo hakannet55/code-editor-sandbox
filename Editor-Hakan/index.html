@@ -36,11 +36,6 @@
 <div class="loader w3-animate-right">
     <img src="assets/img/loader.gif">
 </div>
-<div class="d-inline btn btn-default btn-xs p-2 no-gutters float-right">
-    <label style="cursor: pointer;">
-        <input type="checkbox" name="autofocusEditor" checked="checked"/> Auto-bigTextEditor
-    </label>
-</div>
 <div class="d-block panel">
     <div onclick="saveHistory()" class="btn btn-default w3-hover-blue-gray float-right">
         <span>Kaydet</span>&nbsp;<span class="fa fa-fw fa-save"></span>
@@ -48,6 +43,14 @@
     <select id="historySelector" class="form-control float-right">
     </select>
     <h4 class="p-2">CODE EDITOR SANDBOX</h4>
+</div>
+<div class="d-inline btn btn-default btn-xs p-2 no-gutters float-right">
+    <label style="cursor: pointer;">
+        <input type="checkbox" name="autofocusEditor" checked="checked"/> Auto-bigTextEditor
+    </label>
+    <label style="cursor: pointer;">
+        <input type="checkbox" name="autoRunCheckbox" checked="checked"/> AutoRun
+    </label>
 </div>
 <span><b>Önizleme:</b> 5 saniyede bir otomatik güncellenecektir.</span>
 <br>
@@ -103,7 +106,7 @@ History bölümnden örnek şaplon seçerek başlayabilirsiniz.
 
     // Live update code
     setInterval(function () {
-        if (!isDialogOpened()) {
+        if (!isDialogOpened() && $("input[type=checkbox][name=autoRunCheckbox]").is(':checked')) {
             updatePreviewPage();
         }
     }, 5000);
