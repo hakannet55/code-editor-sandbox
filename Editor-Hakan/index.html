@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="description" content="Ün Okulları">
+    <link rel="shortcut icon" type="image/x-icon" href="favicon.ico">
+    <title>Okul</title>
+    <meta http-equiv="Cache-control" content="public">
+    <meta name="author" content="hakannet55">
+    <meta name="MobileOptimized" content="320">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="Php Yazılım">
+    <meta http-equiv="cleartype" content="on">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="viewport" content="width=device-width,initial-scale=0.95">
+    <!-- Chrome, Firefox OS and Opera -->
+    <meta name="theme-color" content="#ff3333"> <!-- Windows Phone -->
+    <meta name="msapplication-navbutton-color" content="#ff3333"> <!-- iOS Safari -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="#ff3333">
+    <link rel="stylesheet" href="assets/reset.css">
+    <link rel="stylesheet" href="assets/normalizer.css">
+    <link rel="stylesheet" href="assets/w3.css">
+    <link rel="stylesheet" href="assets/font-awesome.min.css">
+    <link rel="stylesheet" href="assets/bootstrap4.css">
+    <link rel="stylesheet" href="assets/bootstrap3.css">
+    <link rel="stylesheet" href="assets/style.css">
+    <script src="assets/polyfill.js"></script>
+    <script src="assets/polyfill_iphone.js"></script>
+    <script src="assets/jqr.js"></script>
+    <script src="utils.js"></script>
+</head>
+<body>
+<div class="d-block panel">
+    <div onclick="saveHistory()" class="btn btn-default w3-hover-blue-gray float-right">
+        <span>Kaydet</span>&nbsp;<span class="fa fa-fw fa-save"></span>
+    </div>
+    <select id="historySelector" class="form-control float-right">
+    </select>
+    <h4 class="p-2">CODE EDITOR SANDBOX</h4>
+</div>
+<span><b>Önizleme:</b> 2 saniyede bir güncellenecektir.</span>
+<div class="d-inline btn btn-default btn-xs p-2 no-gutters">
+    <label style="cursor: pointer;">
+        <input type="checkbox" name="autofocusEditor" checked="checked"/> Auto-bigTextEditor
+    </label>
+</div>
+<div id="iframeWrapper" class="w-100">
+    <div id="contentViewRender" class="w-100">
+        <style name="src_css"></style>
+        <div name="src_html"></div>
+        <script name="src_js"></script>
+    </div>
+</div>
+<div class="tabs d-flex justify-content-around">
+    <div class="sub-window">
+        <div class="header">
+            <div onclick="minimizeWindow(0)" class="btn btn-primary btn-xs"><</div>
+            <span>Javascript</span>
+        </div>
+        <div class="content" name="js" contenteditable="true"></div>
+    </div>
+    <div class="sub-window">
+        <div class="header">
+            <div onclick="minimizeWindow(0)" class="btn btn-primary btn-xs"><</div>
+            <span>HTML</span>
+        </div>
+        <div class="content" name="html" contenteditable="true"></div>
+
+    </div>
+    <div class="sub-window">
+        <div class="header">
+            <div onclick="minimizeWindow(0)" class="btn btn-primary btn-xs"><</div>
+            <span>CSS</span>
+        </div>
+        <div class="content" name="css" contenteditable="true"></div>
+    </div>
+</div>
+<script type="text/javascript" language="javascript">
+
+    initEditorPage({mockHistory: true});
+
+    // Live update code
+    setInterval(function () {
+        updatePreviewPage();
+    }, 2000);
+
+    $("input[name=autofocusEditor][type=checkbox]").change(function () {
+        if (!getFuncautofocusEditorStatus()) {
+            clearBigTextEditorfunc();
+        }
+    });
+
+    function getFuncautofocusEditorStatus() {
+        var el = $("input[name=autofocusEditor][type=checkbox]");
+        console.log(el.is(':checked'));
+        return el && el.is(':checked');
+    }
+
+    $(".tabs .sub-window").on('click', function () {
+        if (getFuncautofocusEditorStatus()) {
+            $(this).parent().find(".sub-window").removeClass('focus');
+            $(this).parent().find(".sub-window").attr("style", 'width:7vw');
+            $(this).addClass("focus");
+            $(this).attr("style", "width: 85vw");
+        }
+    });
+
+    $(".tabs .sub-window").focusout(function () {
+        if (getFuncautofocusEditorStatus()) {
+            $(this).removeClass("focus");
+            $(this).attr("style", '');
+            if (!$(".sub-window.focus").length) {
+                clearBigTextEditorfunc()
+            }
+        }
+    });
+
+    function clearBigTextEditorfunc() {
+        $(".sub-window").attr("style", '');
+        $(".sub-window").removeClass('focus');
+    }
+
+    function updateHistoryOptions(mock) {
+        var element = selector();
+        var options = "<option value='-1'>History</option>";
+        getHistoryList().forEach(function (line1, index) {
+            options += "<option value='" + index + "'>" + line1.name + "</option>";
+        });
+        console.log(options);
+        fillTarget("#historySelector", options);
+    }
+
+    function initEditorPage(options) {
+        // Update mock data
+        if (options.mockHistory) {
+            setHistoryList(true);
+        }
+        updateHistoryOptions(options.mockHistory);
+    }
+
+    function updatePreviewPage() {
+        // get all area code js html css
+        var target = "#contentViewRender", key, temp1, temp2;
+        var codeTextList = getDataWindows();
+        codeTextList.forEach(function (line1Element) {
+            temp1 = $(target + ' [name=src_' + line1Element.getAttribute('name') + ']');
+            //temp1 = selector(target + ' [name=src_' + line1Element.getAttribute('name') + ']');
+            //console.log(target + '[name=src_' + line1.getAttribute('name'));
+            if (temp1 && temp1.length) {
+                temp1.html(line1Element.innerText);
+            }
+        });
+    }
+
+</script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
